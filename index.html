@@ -14,7 +14,7 @@
             --wood-dark: #3e2723;
             --gold: #ffd700;
             --gold-dim: #b8860b;
-            --card-w: 80px; /* Un peu plus petit pour tenir à 2 joueurs */
+            --card-w: 80px;
             --card-h: 112px;
         }
 
@@ -72,7 +72,6 @@
             flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 20px;
         }
         
-        /* Players Container: Split in 2 */
         .players-container {
             flex: 2; display: flex; width: 100%; padding: 0 10px;
         }
@@ -119,7 +118,7 @@
             box-shadow: 0 3px 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
             font-weight: bold; color: #fff; cursor: pointer; font-size: 0.8rem;
         }
-        .chip-stack div { position: absolute; margin-top: -5px; } /* Stack effect logic handled in JS */
+        .chip-stack div { position: absolute; margin-top: -5px; }
 
         .chip-10 { background: radial-gradient(#e53935, #b71c1c); }
         .chip-50 { background: radial-gradient(#1e88e5, #0d47a1); }
@@ -151,7 +150,6 @@
         .btn-stand { background: #f44336; color: white; }
         .btn-deal { background: var(--gold); color: black; padding: 15px 40px; font-size: 1.2rem; }
 
-        /* Chip Rack (Bottom Center) */
         .chip-rack {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 10px; padding: 10px; background: rgba(0,0,0,0.8); border-radius: 40px;
@@ -159,7 +157,6 @@
         }
         .chip-rack.visible { opacity: 1; pointer-events: all; }
 
-        /* Messages */
         #game-message {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.9); color: var(--gold); padding: 15px 30px;
@@ -192,7 +189,7 @@
                 <input type="number" id="bank-input" value="1000" placeholder="Bankroll ($)">
             </div>
             <button class="btn-gold" onclick="initLogin()">Rejoindre la Table</button>
-            <p id="status-text" style="color:#888; margin-top:10px; font-size:0.9rem;"></p>
+            <p id="status-text" style="color:#aaa; margin-top:10px; font-size:0.9rem; font-style:italic;"></p>
         </div>
     </div>
 
@@ -272,22 +269,34 @@
         const SUITS = ['♠', '♥', '♣', '♦'];
         const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
         
+        // Configuration STUN pour traverser les NATs (Important pour mobile/réseaux différents)
+        const peerConfig = {
+            debug: 1,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
+        };
+
         let peer; 
-        const playerConnections = [null, null]; // STORE CONN SEPARATELY TO FIX CRASH
-        let hostConn; // Single connection for Client
-        let myRole = null; // 'HOST' or 'CLIENT'
-        let mySeatIndex = -1; // -1 for Host, 0 or 1 for Clients
+        const playerConnections = [null, null];
+        let hostConn;
+        let myRole = null;
+        let mySeatIndex = -1;
         let localBetDraft = 0;
 
         // Shared State
         let gameState = {
-            phase: 'lobby', // lobby, betting, dealing, turn, dealer_turn, payout
-            activePlayerIndex: 0, // 0 or 1
+            phase: 'lobby',
+            activePlayerIndex: 0,
             deck: [],
             dealer: { hand: [], score: 0 },
             players: [
-                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' }, // Seat 0
-                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' }  // Seat 1
+                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' },
+                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' }
             ]
         };
 
@@ -302,7 +311,8 @@
                 deal: document.getElementById('btn-deal'),
                 hit: document.getElementById('btn-hit'),
                 stand: document.getElementById('btn-stand')
-            }
+            },
+            status: document.getElementById('status-text')
         };
 
         // --- CORE LOGIC ---
@@ -313,38 +323,64 @@
             if(!room || !user) return alert("Pseudo et Salon requis");
 
             const peerId = 'rbj3_' + room.toLowerCase().replace(/[^a-z0-9]/g, '');
-            document.getElementById('status-text').innerText = "Connexion...";
+            ui.status.innerText = "Tentative de création du salon (Mode Croupier)...";
 
             // Try Host
-            const p = new Peer(peerId);
+            const p = new Peer(peerId, peerConfig);
+            
             p.on('open', (id) => {
                 myRole = 'HOST';
                 peer = p;
                 document.getElementById('dealer-name').innerText = user + " (Croupier)";
-                enterGame();
+                ui.status.innerText = "Salon créé ! Entrée...";
+                setTimeout(enterGame, 1000);
                 setupHostListeners();
             });
+            
             p.on('error', (err) => {
                 if(err.type === 'unavailable-id') {
                     // Try Client
+                    ui.status.innerText = "Salon existant. Connexion en tant que Joueur...";
                     joinAsClient(peerId, user, bank);
                 } else {
-                    alert("Erreur PeerJS: " + err.type);
+                    ui.status.innerText = "Erreur Réseau: " + err.type;
+                    console.error(err);
                 }
             });
         }
 
         function joinAsClient(hostId, user, bank) {
-            peer = new Peer();
+            peer = new Peer(null, peerConfig); // Use Config here too!
+            
             peer.on('open', () => {
                 myRole = 'CLIENT';
-                hostConn = peer.connect(hostId);
+                ui.status.innerText = "Connexion au Croupier (P2P)...";
+                
+                hostConn = peer.connect(hostId, { reliable: true });
+                
+                // Timeout watchdog
+                const timeout = setTimeout(() => {
+                    if(!hostConn.open) ui.status.innerText = "Échec connexion : Le réseau bloque le P2P. Réessayez sur le même WiFi.";
+                }, 8000);
+
                 hostConn.on('open', () => {
+                    clearTimeout(timeout);
+                    ui.status.innerText = "Connecté ! Entrée...";
                     hostConn.send({ type: 'JOIN', name: user, bank: bank });
+                    enterGame();
                 });
+
                 hostConn.on('data', handleClientData);
-                hostConn.on('close', () => { alert("Table fermée"); location.reload(); });
-                enterGame();
+                hostConn.on('close', () => { alert("Connexion perdue avec le Croupier"); location.reload(); });
+                
+                hostConn.on('error', (err) => {
+                    clearTimeout(timeout);
+                    ui.status.innerText = "Erreur connexion: " + err;
+                });
+            });
+
+            peer.on('error', err => {
+                ui.status.innerText = "Erreur Client PeerJS: " + err.type;
             });
         }
 
@@ -361,7 +397,6 @@
                 const seatIdx = gameState.players.findIndex(p => p.status === 'empty');
                 
                 if(seatIdx === -1) {
-                    // Table full
                     setTimeout(() => conn.close(), 500);
                     return;
                 }
@@ -374,10 +409,9 @@
                             hand: [], score: 0,
                             bankroll: data.bank,
                             bet: 0,
-                            status: 'joined' // joined, ready (bet placed), playing, busted, stand
-                            // NO CONN HERE
+                            status: 'joined'
                         };
-                        playerConnections[seatIdx] = conn; // STORE HERE
+                        playerConnections[seatIdx] = conn;
                         conn.send({ type: 'WELCOME', seat: seatIdx });
                         broadcast();
                     }
@@ -410,7 +444,6 @@
         }
 
         function hostDeal() {
-            // Can only deal if at least one player is ready and no one is 'joined' (must be ready or empty)
             const activePlayers = gameState.players.filter(p => p.status !== 'empty');
             if(activePlayers.length === 0) return;
             const allReady = activePlayers.every(p => p.status === 'ready');
@@ -430,10 +463,8 @@
                 
                 gameState.phase = 'turn';
                 
-                // Find first playing player
                 gameState.activePlayerIndex = gameState.players.findIndex(p => p.status === 'playing');
                 
-                // If everyone has blackjack or empty
                 if(gameState.activePlayerIndex === -1) {
                     gameState.phase = 'dealer_turn';
                     runDealer();
@@ -445,9 +476,7 @@
 
         function handleGameAction(seatIdx, act) {
             if(gameState.phase !== 'turn' || gameState.activePlayerIndex !== seatIdx) return;
-            
             const p = gameState.players[seatIdx];
-            
             if(act === 'HIT') {
                 p.hand.push(draw());
                 p.score = calculateScore(p.hand);
@@ -463,7 +492,6 @@
         }
 
         function advanceTurn() {
-            // Find next player
             let nextIdx = -1;
             for(let i = gameState.activePlayerIndex + 1; i < 2; i++) {
                 if(gameState.players[i].status === 'playing') {
@@ -471,7 +499,6 @@
                     break;
                 }
             }
-
             if(nextIdx !== -1) {
                 gameState.activePlayerIndex = nextIdx;
             } else {
@@ -481,9 +508,8 @@
         }
 
         function runDealer() {
-            broadcast(); // Reveal cards
+            broadcast(); 
             const play = () => {
-                // Dealer logic: hit on soft 17? Let's say stick on 17.
                 if(gameState.dealer.score < 17) {
                     setTimeout(() => {
                         gameState.dealer.hand.push(draw());
@@ -504,26 +530,19 @@
 
             gameState.players.forEach(p => {
                 if(p.status === 'empty') return;
-                
                 let win = 0;
                 const pScore = p.score > 21 ? 0 : p.score;
-
                 if(p.status === 'blackjack') {
-                    // Check if dealer also has BJ
                     const dealerBJ = (gameState.dealer.hand.length === 2 && gameState.dealer.score === 21);
-                    if(dealerBJ) win = p.bet; // Push
-                    else win = p.bet * 2.5; // BJ Payout
+                    if(dealerBJ) win = p.bet; 
+                    else win = p.bet * 2.5; 
                 } else if(p.status !== 'busted') {
                     if(pScore > dScore) win = p.bet * 2;
                     else if(pScore === dScore) win = p.bet;
                 }
-
                 p.bankroll += win;
-                // Reset status for next round UI logic
             });
-
             broadcast();
-
             setTimeout(() => {
                 gameState.phase = 'betting';
                 gameState.players.forEach(p => {
@@ -537,7 +556,6 @@
             }, 5000);
         }
 
-
         // --- CLIENT LOGIC ---
         function handleClientData(data) {
             if(data.type === 'WELCOME') {
@@ -545,10 +563,9 @@
                 document.title = `Joueur ${mySeatIndex + 1}`;
             }
             if(data.type === 'UPDATE') {
-                // Reconstruct players array without conn objects
                 gameState = data.state;
                 if(gameState.phase === 'betting' && gameState.players[mySeatIndex].bet === 0) {
-                    localBetDraft = 0; // Reset local draft
+                    localBetDraft = 0; 
                 }
                 renderUI();
             }
@@ -560,13 +577,12 @@
                 const p = gameState.players[mySeatIndex];
                 if(localBetDraft + amount <= p.bankroll) localBetDraft += amount;
             }
-            renderUI(); // Update local chip stack view
+            renderUI();
         }
 
         function validateBet() {
             if(localBetDraft > 0) {
                 hostConn.send({ type: 'BET', amount: localBetDraft });
-                // Optimistic UI update
                 gameState.players[mySeatIndex].bet = localBetDraft; 
                 renderUI();
             }
@@ -578,10 +594,6 @@
 
         // --- SHARED UTILS ---
         function broadcast() {
-            // Strip conn objects before sending
-            // const safeState = JSON.parse(JSON.stringify(gameState)); // No longer circular
-            
-            // We need to actually send to the stored connections
             playerConnections.forEach(conn => {
                 if(conn && conn.open) conn.send({ type: 'UPDATE', state: gameState });
             });
@@ -602,11 +614,9 @@
 
         // --- RENDERING ---
         function renderUI() {
-            // Info Bar
             const activeCount = gameState.players.filter(p=>p.status!=='empty').length;
             document.getElementById('player-count').innerText = activeCount;
 
-            // Message
             const msg = document.getElementById('game-message');
             msg.style.display = 'none';
             if(gameState.phase === 'lobby') {
@@ -620,14 +630,12 @@
                 msg.style.display = 'block'; msg.innerText = "FIN DE MANCHE";
             }
 
-            // Buttons
             const btns = ui.btns;
             Object.values(btns).forEach(b => b.classList.remove('visible'));
             ui.rack.classList.remove('visible');
 
             if(myRole === 'HOST') {
                 if(gameState.phase === 'lobby') btns.open.classList.add('visible');
-                // Check if players are ready for deal
                 const readyCount = gameState.players.filter(p => p.status === 'ready').length;
                 if(gameState.phase === 'betting' && readyCount > 0 && readyCount === activeCount) {
                     btns.deal.classList.add('visible');
@@ -636,7 +644,6 @@
                 const me = gameState.players[mySeatIndex];
                 if(gameState.phase === 'betting' && me.status !== 'ready') {
                     ui.rack.classList.add('visible');
-                    // Update rack text if needed
                 }
                 if(gameState.phase === 'turn' && gameState.activePlayerIndex === mySeatIndex) {
                     btns.hit.classList.add('visible');
@@ -645,7 +652,6 @@
                 }
             }
 
-            // Seats
             [0, 1].forEach(i => {
                 const p = gameState.players[i];
                 const seatDiv = document.getElementById(`seat-${i}`);
@@ -656,7 +662,6 @@
                 const chipsDiv = document.getElementById(`p0-chips`.replace('0', i));
                 const spotDiv = document.getElementById(`p0-spot`.replace('0', i));
 
-                // Active turn highlight
                 seatDiv.classList.toggle('active-turn', (gameState.phase === 'turn' && gameState.activePlayerIndex === i));
 
                 if(p.status === 'empty') {
@@ -668,27 +673,22 @@
                     nameDiv.innerText = p.name + (mySeatIndex === i ? " (Moi)" : "");
                     bankDiv.innerText = p.bankroll;
                     
-                    // Bet Display
                     let displayBet = p.bet;
-                    // If client is betting locally, show draft
                     if(myRole === 'CLIENT' && mySeatIndex === i && gameState.phase === 'betting' && p.status !== 'ready') {
                         displayBet = localBetDraft;
                     }
                     betDiv.innerText = displayBet;
                     
-                    // Chips Visual
                     chipsDiv.innerHTML = '';
                     spotDiv.classList.remove('active');
                     if(displayBet > 0) {
                         spotDiv.classList.add('active');
-                        // Simple stack visual
                         const d = document.createElement('div');
-                        d.className = 'chip chip-100'; // Generic visual
+                        d.className = 'chip chip-100'; 
                         d.innerText = displayBet;
                         chipsDiv.appendChild(d);
                     }
 
-                    // Cards
                     cardDiv.innerHTML = '';
                     p.hand.forEach((c, idx) => {
                         cardDiv.appendChild(renderCard(c, idx));
@@ -696,11 +696,9 @@
                 }
             });
 
-            // Dealer
             const dCards = document.getElementById('dealer-cards');
             dCards.innerHTML = '';
             gameState.dealer.hand.forEach((c, idx) => {
-                // Hide hole card if turn is still playing
                 const hide = (idx === 1 && (gameState.phase === 'turn' || gameState.phase === 'betting'));
                 dCards.appendChild(renderCard(c, idx, hide));
             });
@@ -715,7 +713,7 @@
         function renderCard(c, i, hidden=false) {
             const el = document.createElement('div');
             el.className = `card ${c.color} ${hidden ? 'back' : ''}`;
-            el.style.transform = `translateX(${i * 30}px)`; // Stack horiz
+            el.style.transform = `translateX(${i * 30}px)`; 
             if(!hidden) {
                 el.innerHTML = `<div style="text-align:left">${c.r}</div><div class="suit-big">${c.s}</div><div class="val-btm">${c.r}</div>`;
             }
