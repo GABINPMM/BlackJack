@@ -16,6 +16,7 @@
             --gold-dim: #b8860b;
             --card-w: 80px;
             --card-h: 112px;
+            --chip-size: 45px;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -69,11 +70,11 @@
 
         /* --- ZONES --- */
         .dealer-zone {
-            flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 20px;
+            flex: 0.8; display: flex; flex-direction: column; align-items: center; padding-top: 15px;
         }
         
         .players-container {
-            flex: 2; display: flex; width: 100%; padding: 0 10px;
+            flex: 2; display: flex; width: 100%; padding: 0 10px; gap: 10px;
         }
         .player-seat {
             flex: 1; border-top: 2px dashed rgba(255,255,255,0.05);
@@ -86,11 +87,21 @@
             box-shadow: 0 -10px 20px rgba(255, 215, 0, 0.05);
         }
 
-        /* --- CARDS & CHIPS --- */
-        .cards-wrapper {
-            display: flex; justify-content: center; height: var(--card-h); min-width: 120px;
-            perspective: 1000px; margin-bottom: 10px;
+        /* --- CARDS & SPLIT --- */
+        .cards-area {
+            display: flex; justify-content: center; width: 100%;
         }
+        .cards-wrapper {
+            display: flex; justify-content: center; height: var(--card-h); min-width: 100px;
+            perspective: 1000px; margin-bottom: 5px; transition: all 0.3s;
+        }
+        .split-col {
+            transform: scale(0.85); margin: 0 -10px; /* Smaller cards if split */
+        }
+        .active-hand {
+            filter: drop-shadow(0 0 10px var(--gold)); transform: scale(0.95) translateY(-5px);
+        }
+
         .card {
             width: var(--card-w); height: var(--card-h); background: #fff; border-radius: 6px;
             box-shadow: 2px 2px 8px rgba(0,0,0,0.4); position: relative; margin-left: -50px;
@@ -107,16 +118,24 @@
         .card.back { background: repeating-linear-gradient(45deg, #1a237e 0, #1a237e 5px, #283593 5px, #283593 10px); }
         .card.back * { display: none; }
 
+        /* --- SCORES & CHIPS --- */
+        .score-bubble {
+            background: #000; color: #fff; padding: 2px 8px; border-radius: 12px;
+            font-size: 0.8rem; border: 1px solid var(--gold); margin-top: 5px;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .score-bubble.visible { opacity: 1; }
+
         .betting-spot {
-            width: 90px; height: 90px; border: 3px dashed rgba(255,215,0,0.3); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; margin-bottom: 10px;
+            width: 80px; height: 80px; border: 3px dashed rgba(255,215,0,0.3); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; margin-bottom: 5px;
             background: rgba(0,0,0,0.2); transition: all 0.3s;
         }
         .betting-spot.active { border-color: var(--gold); }
         .chip {
-            width: 45px; height: 45px; border-radius: 50%; border: 3px dashed #fff;
+            width: var(--chip-size); height: var(--chip-size); border-radius: 50%; border: 3px dashed #fff;
             box-shadow: 0 3px 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
-            font-weight: bold; color: #fff; cursor: pointer; font-size: 0.8rem;
+            font-weight: bold; color: #fff; cursor: pointer; font-size: 0.75rem;
         }
         .chip-stack div { position: absolute; margin-top: -5px; }
 
@@ -128,48 +147,60 @@
         /* --- UI CONTROLS --- */
         .ui-panel { position: absolute; top: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
         .stats-box {
-            background: rgba(0,0,0,0.7); color: var(--gold); padding: 8px 15px; border-radius: 4px;
+            background: rgba(0,0,0,0.7); color: var(--gold); padding: 5px 12px; border-radius: 4px;
             border: 1px solid var(--gold-dim); font-family: 'Playfair Display', serif; text-align: center;
+            font-size: 0.9rem;
         }
         .player-info {
-            background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 4px;
-            text-align: center; margin-bottom: 5px; width: 100%;
+            background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px;
+            text-align: center; margin-bottom: 5px; width: 100%; font-size: 0.9rem;
         }
 
         .action-bar {
             position: absolute; bottom: 50%; transform: translateY(50%); width: 100%;
-            display: flex; justify-content: center; gap: 15px; pointer-events: none; z-index: 100;
+            display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; z-index: 100;
+            flex-wrap: wrap; padding: 0 10px;
         }
         .action-btn {
-            pointer-events: all; padding: 12px 25px; border-radius: 30px; border: none;
+            pointer-events: all; padding: 12px 24px; border-radius: 30px; border: none;
             font-weight: bold; text-transform: uppercase; cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transform: scale(0.8); transition: all 0.3s;
+            min-width: 90px;
         }
         .action-btn.visible { opacity: 1; transform: scale(1); }
+        
         .btn-hit { background: #4caf50; color: white; }
         .btn-stand { background: #f44336; color: white; }
+        .btn-double { background: #ff9800; color: black; } /* Orange */
+        .btn-split { background: #2196f3; color: white; } /* Blue */
         .btn-deal { background: var(--gold); color: black; padding: 15px 40px; font-size: 1.2rem; }
 
         .chip-rack {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; padding: 10px; background: rgba(0,0,0,0.8); border-radius: 40px;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; padding: 8px; background: rgba(0,0,0,0.8); border-radius: 40px;
             border: 1px solid var(--gold); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 50;
         }
         .chip-rack.visible { opacity: 1; pointer-events: all; }
 
         #game-message {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.9); color: var(--gold); padding: 15px 30px;
             border: 2px solid var(--gold); font-family: 'Playfair Display', serif;
-            font-size: 1.5rem; display: none; z-index: 200; text-align: center;
+            font-size: 1.5rem; display: none; z-index: 200; text-align: center; width: 80%;
         }
 
+        /* --- MOBILE OPTIMIZATION --- */
         @media (max-width: 768px) {
-            :root { --card-w: 50px; --card-h: 70px; }
-            .players-container { padding: 0; }
-            .player-info { font-size: 0.8rem; }
-            .chip { width: 35px; height: 35px; }
-            .chip-rack { bottom: 10px; width: 90%; justify-content: center; }
+            :root { --card-w: 55px; --card-h: 77px; --chip-size: 40px; }
+            #game-table { margin: 0; border-width: 10px; border-radius: 0; }
+            .players-container { padding: 0 5px; }
+            .action-bar { bottom: 45%; gap: 8px; }
+            .action-btn { padding: 10px 15px; font-size: 0.9rem; min-width: 70px; }
+            .stats-box { font-size: 0.75rem; padding: 4px 8px; }
+            #game-message { font-size: 1.2rem; }
+            .dealer-zone { padding-top: 40px; } /* Space for stats */
+            .betting-spot { width: 60px; height: 60px; }
+            .score-bubble { font-size: 0.7rem; padding: 1px 5px; }
         }
     </style>
 </head>
@@ -211,7 +242,7 @@
 
         <div class="dealer-zone">
             <div id="dealer-cards" class="cards-wrapper"></div>
-            <div id="dealer-score" style="color:white; font-size:0.9rem; opacity:0;">0</div>
+            <div id="dealer-score-bubble" class="score-bubble">0</div>
         </div>
 
         <div id="game-message">ATTENTE JOUEURS...</div>
@@ -220,8 +251,12 @@
         <div class="action-bar">
             <button id="btn-open" class="action-btn btn-deal" onclick="hostOpenTable()">OUVRIR LA TABLE</button>
             <button id="btn-deal" class="action-btn btn-deal" onclick="hostDeal()">DISTRIBUER</button>
+            
+            <!-- Player Actions -->
             <button id="btn-hit" class="action-btn btn-hit" onclick="clientAction('HIT')">TIRE</button>
             <button id="btn-stand" class="action-btn btn-stand" onclick="clientAction('STAND')">RESTE</button>
+            <button id="btn-double" class="action-btn btn-double" onclick="clientAction('DOUBLE')">DOUBLE</button>
+            <button id="btn-split" class="action-btn btn-split" onclick="clientAction('SPLIT')">SPLIT</button>
         </div>
 
         <!-- PLAYERS ZONE (SPLIT) -->
@@ -232,11 +267,11 @@
                     <span id="p0-name">Libre</span><br>
                     <span style="color:var(--gold)">$<span id="p0-bank">0</span></span>
                 </div>
-                <div id="p0-cards" class="cards-wrapper"></div>
+                <div id="p0-hand-area" class="cards-area"></div>
                 <div class="betting-spot" id="p0-spot">
                     <div id="p0-chips" class="chip-stack"></div>
                 </div>
-                <div style="color:var(--gold); font-size:0.9rem; margin-bottom:5px;">Mise: $<span id="p0-bet">0</span></div>
+                <div style="color:var(--gold); font-size:0.8rem;">Mise: $<span id="p0-bet">0</span></div>
             </div>
 
             <!-- SEAT 2 -->
@@ -245,11 +280,11 @@
                     <span id="p1-name">Libre</span><br>
                     <span style="color:var(--gold)">$<span id="p1-bank">0</span></span>
                 </div>
-                <div id="p1-cards" class="cards-wrapper"></div>
+                <div id="p1-hand-area" class="cards-area"></div>
                 <div class="betting-spot" id="p1-spot">
                     <div id="p1-chips" class="chip-stack"></div>
                 </div>
-                <div style="color:var(--gold); font-size:0.9rem; margin-bottom:5px;">Mise: $<span id="p1-bet">0</span></div>
+                <div style="color:var(--gold); font-size:0.8rem;">Mise: $<span id="p1-bet">0</span></div>
             </div>
         </div>
 
@@ -260,7 +295,7 @@
             <div class="chip chip-100" onclick="placeBet(100)">100</div>
             <div class="chip chip-500" onclick="placeBet(500)">500</div>
             <div class="chip" style="border-color:red; background:#333;" onclick="placeBet(-1)">X</div>
-            <button class="action-btn visible" style="font-size:0.8rem; padding:5px 15px;" onclick="validateBet()">OK</button>
+            <button class="action-btn visible" style="font-size:0.8rem; padding:5px 15px; min-width:auto;" onclick="validateBet()">OK</button>
         </div>
     </div>
 
@@ -269,16 +304,9 @@
         const SUITS = ['♠', '♥', '♣', '♦'];
         const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
         
-        // Configuration STUN pour traverser les NATs (Important pour mobile/réseaux différents)
         const peerConfig = {
             debug: 1,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
+            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
         };
 
         let peer; 
@@ -292,11 +320,14 @@
         let gameState = {
             phase: 'lobby',
             activePlayerIndex: 0,
+            activeHandSubIndex: 0, // 0 = main hand, 1 = split hand
             deck: [],
             dealer: { hand: [], score: 0 },
             players: [
-                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' },
-                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty' }
+                // Hand structure: { cards:[], score:0, bet:0, status:'' }
+                // For Split: 'splitHand' property will be added dynamically
+                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty', splitHand: null, splitBet: 0, splitScore: 0, splitStatus: '' },
+                { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty', splitHand: null, splitBet: 0, splitScore: 0, splitStatus: '' }
             ]
         };
 
@@ -310,7 +341,9 @@
                 open: document.getElementById('btn-open'),
                 deal: document.getElementById('btn-deal'),
                 hit: document.getElementById('btn-hit'),
-                stand: document.getElementById('btn-stand')
+                stand: document.getElementById('btn-stand'),
+                double: document.getElementById('btn-double'),
+                split: document.getElementById('btn-split')
             },
             status: document.getElementById('status-text')
         };
@@ -323,64 +356,40 @@
             if(!room || !user) return alert("Pseudo et Salon requis");
 
             const peerId = 'rbj3_' + room.toLowerCase().replace(/[^a-z0-9]/g, '');
-            ui.status.innerText = "Tentative de création du salon (Mode Croupier)...";
+            ui.status.innerText = "Création du salon (Croupier)...";
 
-            // Try Host
             const p = new Peer(peerId, peerConfig);
             
             p.on('open', (id) => {
                 myRole = 'HOST';
                 peer = p;
-                document.getElementById('dealer-name').innerText = user + " (Croupier)";
-                ui.status.innerText = "Salon créé ! Entrée...";
+                document.getElementById('dealer-name').innerText = user;
+                ui.status.innerText = "Salon créé !";
                 setTimeout(enterGame, 1000);
                 setupHostListeners();
             });
             
             p.on('error', (err) => {
                 if(err.type === 'unavailable-id') {
-                    // Try Client
-                    ui.status.innerText = "Salon existant. Connexion en tant que Joueur...";
+                    ui.status.innerText = "Connexion Joueur...";
                     joinAsClient(peerId, user, bank);
                 } else {
-                    ui.status.innerText = "Erreur Réseau: " + err.type;
-                    console.error(err);
+                    ui.status.innerText = "Erreur: " + err.type;
                 }
             });
         }
 
         function joinAsClient(hostId, user, bank) {
-            peer = new Peer(null, peerConfig); // Use Config here too!
-            
+            peer = new Peer(null, peerConfig);
             peer.on('open', () => {
                 myRole = 'CLIENT';
-                ui.status.innerText = "Connexion au Croupier (P2P)...";
-                
                 hostConn = peer.connect(hostId, { reliable: true });
-                
-                // Timeout watchdog
-                const timeout = setTimeout(() => {
-                    if(!hostConn.open) ui.status.innerText = "Échec connexion : Le réseau bloque le P2P. Réessayez sur le même WiFi.";
-                }, 8000);
-
                 hostConn.on('open', () => {
-                    clearTimeout(timeout);
-                    ui.status.innerText = "Connecté ! Entrée...";
                     hostConn.send({ type: 'JOIN', name: user, bank: bank });
                     enterGame();
                 });
-
                 hostConn.on('data', handleClientData);
-                hostConn.on('close', () => { alert("Connexion perdue avec le Croupier"); location.reload(); });
-                
-                hostConn.on('error', (err) => {
-                    clearTimeout(timeout);
-                    ui.status.innerText = "Erreur connexion: " + err;
-                });
-            });
-
-            peer.on('error', err => {
-                ui.status.innerText = "Erreur Client PeerJS: " + err.type;
+                hostConn.on('close', () => { alert("Connexion perdue"); location.reload(); });
             });
         }
 
@@ -393,23 +402,15 @@
         // --- HOST LOGIC ---
         function setupHostListeners() {
             peer.on('connection', (conn) => {
-                // Find empty seat
                 const seatIdx = gameState.players.findIndex(p => p.status === 'empty');
-                
-                if(seatIdx === -1) {
-                    setTimeout(() => conn.close(), 500);
-                    return;
-                }
+                if(seatIdx === -1) { setTimeout(() => conn.close(), 500); return; }
 
                 conn.on('data', (data) => {
                     if(data.type === 'JOIN') {
                         gameState.players[seatIdx] = {
-                            id: conn.peer,
-                            name: data.name,
-                            hand: [], score: 0,
-                            bankroll: data.bank,
-                            bet: 0,
-                            status: 'joined'
+                            id: conn.peer, name: data.name,
+                            hand: [], score: 0, bankroll: data.bank, bet: 0, status: 'joined',
+                            splitHand: null, splitBet: 0, splitScore: 0, splitStatus: ''
                         };
                         playerConnections[seatIdx] = conn;
                         conn.send({ type: 'WELCOME', seat: seatIdx });
@@ -418,18 +419,14 @@
                     if(data.type === 'BET') {
                         const p = gameState.players[seatIdx];
                         if(gameState.phase === 'betting') {
-                            p.bet = data.amount;
-                            p.status = 'ready';
-                            broadcast();
+                            p.bet = data.amount; p.status = 'ready'; broadcast();
                         }
                     }
-                    if(data.type === 'ACTION') {
-                        handleGameAction(seatIdx, data.act);
-                    }
+                    if(data.type === 'ACTION') handleGameAction(seatIdx, data.act);
                 });
 
                 conn.on('close', () => {
-                    gameState.players[seatIdx] = { status: 'empty', name: null, hand: [], score: 0, bankroll: 0, bet: 0 };
+                    gameState.players[seatIdx] = { status: 'empty', name: null, hand: [], score: 0, bankroll: 0, bet: 0, splitHand: null };
                     playerConnections[seatIdx] = null;
                     broadcast();
                 });
@@ -446,9 +443,7 @@
         function hostDeal() {
             const activePlayers = gameState.players.filter(p => p.status !== 'empty');
             if(activePlayers.length === 0) return;
-            const allReady = activePlayers.every(p => p.status === 'ready');
-            
-            if(allReady) {
+            if(activePlayers.every(p => p.status === 'ready')) {
                 gameState.players.forEach(p => {
                     if(p.status === 'ready') {
                         p.bankroll -= p.bet;
@@ -462,14 +457,10 @@
                 gameState.dealer.score = calculateScore(gameState.dealer.hand);
                 
                 gameState.phase = 'turn';
-                
                 gameState.activePlayerIndex = gameState.players.findIndex(p => p.status === 'playing');
-                
-                if(gameState.activePlayerIndex === -1) {
-                    gameState.phase = 'dealer_turn';
-                    runDealer();
-                }
+                gameState.activeHandSubIndex = 0;
 
+                if(gameState.activePlayerIndex === -1) { gameState.phase = 'dealer_turn'; runDealer(); }
                 broadcast();
             }
         }
@@ -477,21 +468,63 @@
         function handleGameAction(seatIdx, act) {
             if(gameState.phase !== 'turn' || gameState.activePlayerIndex !== seatIdx) return;
             const p = gameState.players[seatIdx];
+            
+            // Identify active hand (Main or Split)
+            let currentHand = (gameState.activeHandSubIndex === 0) ? p.hand : p.splitHand;
+            let currentScoreKey = (gameState.activeHandSubIndex === 0) ? 'score' : 'splitScore';
+            let currentStatusKey = (gameState.activeHandSubIndex === 0) ? 'status' : 'splitStatus';
+            let currentBetKey = (gameState.activeHandSubIndex === 0) ? 'bet' : 'splitBet';
+
             if(act === 'HIT') {
-                p.hand.push(draw());
-                p.score = calculateScore(p.hand);
-                if(p.score > 21) {
-                    p.status = 'busted';
+                currentHand.push(draw());
+                p[currentScoreKey] = calculateScore(currentHand);
+                if(p[currentScoreKey] > 21) {
+                    p[currentStatusKey] = 'busted';
                     advanceTurn();
                 }
-            } else {
-                p.status = 'stand';
+            } 
+            else if(act === 'STAND') {
+                p[currentStatusKey] = 'stand';
                 advanceTurn();
+            }
+            else if(act === 'DOUBLE') {
+                if(p.bankroll >= p[currentBetKey]) {
+                    p.bankroll -= p[currentBetKey];
+                    p[currentBetKey] *= 2;
+                    currentHand.push(draw());
+                    p[currentScoreKey] = calculateScore(currentHand);
+                    p[currentStatusKey] = (p[currentScoreKey] > 21) ? 'busted' : 'stand'; // Force stand after double
+                    advanceTurn();
+                }
+            }
+            else if(act === 'SPLIT') {
+                // Logic: Move 2nd card of main hand to split hand
+                if(p.bankroll >= p.bet && p.splitHand === null) {
+                    p.bankroll -= p.bet;
+                    p.splitBet = p.bet;
+                    p.splitHand = [p.hand.pop()]; // Move card
+                    p.hand.push(draw()); // Refill main
+                    p.splitHand.push(draw()); // Refill split
+                    
+                    p.score = calculateScore(p.hand);
+                    p.splitScore = calculateScore(p.splitHand);
+                    p.splitStatus = 'playing';
+                    // Don't advance turn, play main hand first
+                }
             }
             broadcast();
         }
 
         function advanceTurn() {
+            const p = gameState.players[gameState.activePlayerIndex];
+            
+            // If playing main hand and has a split hand waiting
+            if(gameState.activeHandSubIndex === 0 && p.splitHand !== null) {
+                gameState.activeHandSubIndex = 1; // Move to split hand
+                return;
+            }
+
+            // Find next player
             let nextIdx = -1;
             for(let i = gameState.activePlayerIndex + 1; i < 2; i++) {
                 if(gameState.players[i].status === 'playing') {
@@ -501,6 +534,7 @@
             }
             if(nextIdx !== -1) {
                 gameState.activePlayerIndex = nextIdx;
+                gameState.activeHandSubIndex = 0; // Reset to main hand for next player
             } else {
                 gameState.phase = 'dealer_turn';
                 runDealer();
@@ -530,24 +564,33 @@
 
             gameState.players.forEach(p => {
                 if(p.status === 'empty') return;
-                let win = 0;
-                const pScore = p.score > 21 ? 0 : p.score;
-                if(p.status === 'blackjack') {
-                    const dealerBJ = (gameState.dealer.hand.length === 2 && gameState.dealer.score === 21);
-                    if(dealerBJ) win = p.bet; 
-                    else win = p.bet * 2.5; 
-                } else if(p.status !== 'busted') {
-                    if(pScore > dScore) win = p.bet * 2;
-                    else if(pScore === dScore) win = p.bet;
-                }
-                p.bankroll += win;
+                
+                // Helper for payout
+                const settle = (handScore, handBet, handStatus) => {
+                    let win = 0;
+                    const sc = handScore > 21 ? 0 : handScore;
+                    if(handStatus === 'blackjack') {
+                        // Check dealer BJ
+                        if(gameState.dealer.hand.length === 2 && gameState.dealer.score === 21) win = handBet;
+                        else win = handBet * 2.5;
+                    } else if(handStatus !== 'busted') {
+                        if(sc > dScore) win = handBet * 2;
+                        else if(sc === dScore) win = handBet;
+                    }
+                    p.bankroll += win;
+                };
+
+                settle(p.score, p.bet, p.status); // Main Hand
+                if(p.splitHand) settle(p.splitScore, p.splitBet, p.splitStatus); // Split Hand
             });
+
             broadcast();
             setTimeout(() => {
                 gameState.phase = 'betting';
                 gameState.players.forEach(p => {
                     if(p.status !== 'empty') {
                         p.hand = []; p.score = 0; p.bet = 0; p.status = 'joined';
+                        p.splitHand = null; p.splitBet = 0; p.splitScore = 0; p.splitStatus = '';
                     }
                 });
                 gameState.dealer.hand = [];
@@ -558,25 +601,18 @@
 
         // --- CLIENT LOGIC ---
         function handleClientData(data) {
-            if(data.type === 'WELCOME') {
-                mySeatIndex = data.seat;
-                document.title = `Joueur ${mySeatIndex + 1}`;
-            }
+            if(data.type === 'WELCOME') { mySeatIndex = data.seat; document.title = `Joueur ${mySeatIndex + 1}`; }
             if(data.type === 'UPDATE') {
                 gameState = data.state;
-                if(gameState.phase === 'betting' && gameState.players[mySeatIndex].bet === 0) {
-                    localBetDraft = 0; 
-                }
+                if(gameState.phase === 'betting' && gameState.players[mySeatIndex].bet === 0) localBetDraft = 0;
                 renderUI();
             }
         }
 
         function placeBet(amount) {
+            const p = gameState.players[mySeatIndex];
             if(amount === -1) localBetDraft = 0;
-            else {
-                const p = gameState.players[mySeatIndex];
-                if(localBetDraft + amount <= p.bankroll) localBetDraft += amount;
-            }
+            else if(localBetDraft + amount <= p.bankroll) localBetDraft += amount;
             renderUI();
         }
 
@@ -588,15 +624,11 @@
             }
         }
 
-        function clientAction(act) {
-            hostConn.send({ type: 'ACTION', act: act });
-        }
+        function clientAction(act) { hostConn.send({ type: 'ACTION', act: act }); }
 
         // --- SHARED UTILS ---
         function broadcast() {
-            playerConnections.forEach(conn => {
-                if(conn && conn.open) conn.send({ type: 'UPDATE', state: gameState });
-            });
+            playerConnections.forEach(conn => { if(conn && conn.open) conn.send({ type: 'UPDATE', state: gameState }); });
             renderUI();
         }
 
@@ -623,13 +655,10 @@
                 msg.style.display = 'block'; msg.innerText = "ATTENTE DU CROUPIER...";
                 if(myRole === 'HOST') msg.innerText = "OUVRIR LA TABLE ?";
             }
-            else if(gameState.phase === 'betting') {
-                msg.style.display = 'block'; msg.innerText = "FAITES VOS JEUX";
-            }
-            else if(gameState.phase === 'payout') {
-                msg.style.display = 'block'; msg.innerText = "FIN DE MANCHE";
-            }
+            else if(gameState.phase === 'betting') { msg.style.display = 'block'; msg.innerText = "FAITES VOS JEUX"; }
+            else if(gameState.phase === 'payout') { msg.style.display = 'block'; msg.innerText = "FIN DE MANCHE"; }
 
+            // Action Buttons Visibility
             const btns = ui.btns;
             Object.values(btns).forEach(b => b.classList.remove('visible'));
             ui.rack.classList.remove('visible');
@@ -637,65 +666,109 @@
             if(myRole === 'HOST') {
                 if(gameState.phase === 'lobby') btns.open.classList.add('visible');
                 const readyCount = gameState.players.filter(p => p.status === 'ready').length;
-                if(gameState.phase === 'betting' && readyCount > 0 && readyCount === activeCount) {
-                    btns.deal.classList.add('visible');
-                }
+                if(gameState.phase === 'betting' && readyCount > 0 && readyCount === activeCount) btns.deal.classList.add('visible');
             } else if(myRole === 'CLIENT') {
                 const me = gameState.players[mySeatIndex];
-                if(gameState.phase === 'betting' && me.status !== 'ready') {
-                    ui.rack.classList.add('visible');
-                }
+                if(gameState.phase === 'betting' && me.status !== 'ready') ui.rack.classList.add('visible');
+                
+                // Turn Controls
                 if(gameState.phase === 'turn' && gameState.activePlayerIndex === mySeatIndex) {
                     btns.hit.classList.add('visible');
                     btns.stand.classList.add('visible');
-                    msg.style.display = 'block'; msg.innerText = "A VOUS DE JOUER";
+                    
+                    // Logic for active hand (Main or Split)
+                    const activeH = (gameState.activeHandSubIndex === 0) ? me.hand : me.splitHand;
+                    const activeBet = (gameState.activeHandSubIndex === 0) ? me.bet : me.splitBet;
+
+                    // Double? (Only first move of a hand)
+                    if(activeH.length === 2 && me.bankroll >= activeBet) btns.double.classList.add('visible');
+                    
+                    // Split? (Only main hand, pairs, no existing split)
+                    if(gameState.activeHandSubIndex === 0 && me.hand.length === 2 
+                       && me.hand[0].r === me.hand[1].r && !me.splitHand && me.bankroll >= me.bet) {
+                        btns.split.classList.add('visible');
+                    }
+
+                    msg.style.display = 'block'; msg.innerText = (gameState.activeHandSubIndex===1 ? "MAIN 2: A VOUS" : "A VOUS DE JOUER");
                 }
             }
 
+            // Seats Render
             [0, 1].forEach(i => {
                 const p = gameState.players[i];
                 const seatDiv = document.getElementById(`seat-${i}`);
                 const nameDiv = document.getElementById(`p0-name`.replace('0', i));
                 const bankDiv = document.getElementById(`p0-bank`.replace('0', i));
                 const betDiv = document.getElementById(`p0-bet`.replace('0', i));
-                const cardDiv = document.getElementById(`p0-cards`.replace('0', i));
+                const handArea = document.getElementById(`p0-hand-area`.replace('0', i));
                 const chipsDiv = document.getElementById(`p0-chips`.replace('0', i));
                 const spotDiv = document.getElementById(`p0-spot`.replace('0', i));
 
+                // Active turn highlight
                 seatDiv.classList.toggle('active-turn', (gameState.phase === 'turn' && gameState.activePlayerIndex === i));
 
                 if(p.status === 'empty') {
-                    nameDiv.innerText = "Libre";
-                    bankDiv.innerText = "-";
-                    seatDiv.style.opacity = 0.5;
+                    nameDiv.innerText = "Libre"; bankDiv.innerText = "-"; seatDiv.style.opacity = 0.5;
+                    handArea.innerHTML = '';
                 } else {
                     seatDiv.style.opacity = 1;
                     nameDiv.innerText = p.name + (mySeatIndex === i ? " (Moi)" : "");
                     bankDiv.innerText = p.bankroll;
                     
+                    // Bet calculation (Local draft vs confirmed)
                     let displayBet = p.bet;
-                    if(myRole === 'CLIENT' && mySeatIndex === i && gameState.phase === 'betting' && p.status !== 'ready') {
-                        displayBet = localBetDraft;
-                    }
+                    if(myRole === 'CLIENT' && mySeatIndex === i && gameState.phase === 'betting' && p.status !== 'ready') displayBet = localBetDraft;
+                    if(p.splitBet > 0) displayBet += p.splitBet; // Show total bet visually
                     betDiv.innerText = displayBet;
                     
-                    chipsDiv.innerHTML = '';
-                    spotDiv.classList.remove('active');
+                    // Chips
+                    chipsDiv.innerHTML = ''; spotDiv.classList.remove('active');
                     if(displayBet > 0) {
                         spotDiv.classList.add('active');
                         const d = document.createElement('div');
-                        d.className = 'chip chip-100'; 
-                        d.innerText = displayBet;
+                        d.className = 'chip chip-100'; d.innerText = displayBet;
                         chipsDiv.appendChild(d);
                     }
 
-                    cardDiv.innerHTML = '';
-                    p.hand.forEach((c, idx) => {
-                        cardDiv.appendChild(renderCard(c, idx));
-                    });
+                    // Hand Rendering (Handle Split)
+                    handArea.innerHTML = '';
+                    
+                    // Wrapper for Main Hand
+                    const mainWrapper = document.createElement('div');
+                    mainWrapper.className = `cards-wrapper ${p.splitHand ? 'split-col' : ''}`;
+                    if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 0) mainWrapper.classList.add('active-hand');
+                    
+                    // Score Bubble Main
+                    if(p.hand.length > 0) {
+                        const scoreB = document.createElement('div');
+                        scoreB.className = 'score-bubble visible';
+                        scoreB.style.position='absolute'; scoreB.style.top='-25px'; scoreB.style.zIndex='20';
+                        scoreB.innerText = p.score;
+                        mainWrapper.appendChild(scoreB);
+                    }
+                    
+                    p.hand.forEach((c, idx) => mainWrapper.appendChild(renderCard(c, idx)));
+                    handArea.appendChild(mainWrapper);
+
+                    // Wrapper for Split Hand
+                    if(p.splitHand) {
+                        const splitWrapper = document.createElement('div');
+                        splitWrapper.className = 'cards-wrapper split-col';
+                        if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 1) splitWrapper.classList.add('active-hand');
+                        
+                        const scoreBS = document.createElement('div');
+                        scoreBS.className = 'score-bubble visible';
+                        scoreBS.style.position='absolute'; scoreBS.style.top='-25px'; scoreBS.style.zIndex='20';
+                        scoreBS.innerText = p.splitScore;
+                        splitWrapper.appendChild(scoreBS);
+
+                        p.splitHand.forEach((c, idx) => splitWrapper.appendChild(renderCard(c, idx)));
+                        handArea.appendChild(splitWrapper);
+                    }
                 }
             });
 
+            // Dealer Render
             const dCards = document.getElementById('dealer-cards');
             dCards.innerHTML = '';
             gameState.dealer.hand.forEach((c, idx) => {
@@ -703,23 +776,22 @@
                 dCards.appendChild(renderCard(c, idx, hide));
             });
             
-            const dScore = document.getElementById('dealer-score');
+            const dBubble = document.getElementById('dealer-score-bubble');
             if(gameState.dealer.hand.length > 0) {
-                dScore.style.opacity = 1;
-                dScore.innerText = gameState.dealer.score; 
-            }
+                dBubble.classList.add('visible');
+                // Hide score if hole card is hidden
+                const hideSecond = (gameState.phase === 'turn' || gameState.phase === 'betting');
+                dBubble.innerText = hideSecond ? gameState.dealer.hand[0].val : gameState.dealer.score;
+            } else dBubble.classList.remove('visible');
         }
 
         function renderCard(c, i, hidden=false) {
             const el = document.createElement('div');
             el.className = `card ${c.color} ${hidden ? 'back' : ''}`;
-            el.style.transform = `translateX(${i * 30}px)`; 
-            if(!hidden) {
-                el.innerHTML = `<div style="text-align:left">${c.r}</div><div class="suit-big">${c.s}</div><div class="val-btm">${c.r}</div>`;
-            }
+            el.style.transform = `translateX(${i * 25}px)`; 
+            if(!hidden) el.innerHTML = `<div style="text-align:left">${c.r}</div><div class="suit-big">${c.s}</div><div class="val-btm">${c.r}</div>`;
             return el;
         }
-
     </script>
 </body>
 </html>
