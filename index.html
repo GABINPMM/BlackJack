@@ -677,7 +677,7 @@
                 ui.dealerHand.appendChild(createCard(c, i, hidden, false));
             });
             document.getElementById('dealer-score').style.display = (gameState.dealer.hand.length > 0 && gameState.phase !== 'betting') ? 'block' : 'none';
-            document.getElementById('dealer-score').innerText = gameState.dealer.score;
+            //document.getElementById('dealer-score').innerText = gameState.dealer.score;
 
             // --- ROLES ---
             let me = null, opp = null;
