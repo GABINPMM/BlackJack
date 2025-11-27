@@ -3,229 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ROYAL BLACKJACK - Ultimate Mobile</title>
+    <title>ROYAL BLACKJACK - Ultimate Mobile V2</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Oswald:wght@500&family=Roboto:wght@400;700&display=swap');
 
         :root {
-            /* Palette Luxe Sombre */
             --bg-dark: #050505;
-            --felt-gradient: radial-gradient(circle at 50% 30%, #1a472a, #0b2e19 60%, #000000);
+            /* Un vert plus profond et luxueux */
+            --felt-gradient: radial-gradient(circle at 50% 40%, #1e5e34, #0d3a20 70%, #02120a);
             --gold: #d4af37;
             --gold-glow: #f9d765;
             --danger: #ff4757;
             --success: #2ed573;
             --action: #3742fa;
             
-            /* Dimensions dynamiques */
-            --card-w-big: 22vw;
-            --card-h-big: 30vw;
-            --card-w-mini: 10vw;
-            --card-h-mini: 14vw;
-            --chip-size: 16vw;
+            /* Ajustement des tailles pour éviter les coupures */
+            --card-w-big: 20vw;
+            --card-h-big: 28vw;
+            --card-w-mini: 9vw;
+            --card-h-mini: 12.6vw;
+            --chip-size: 15vw;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         body {
-            margin: 0; height: 100vh; height: 100dvh;
+            margin: 0; 
+            height: 100vh; 
+            height: 100dvh; /* Support complet mobile */
             background: var(--bg-dark);
             font-family: 'Roboto', sans-serif; overflow: hidden;
             color: white; display: flex; flex-direction: column;
         }
 
-        /* --- LOGIN SCREEN --- */
+        /* --- LOGIN --- */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.96); backdrop-filter: blur(10px);
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             z-index: 9999; padding: 30px;
         }
         .brand-title {
-            font-family: 'Playfair Display', serif; font-size: 3rem; color: var(--gold);
-            text-shadow: 0 0 20px rgba(212, 175, 55, 0.3); margin-bottom: 40px; text-align: center;
+            font-family: 'Playfair Display', serif; font-size: 2.5rem; color: var(--gold);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.3); margin-bottom: 30px; text-align: center;
         }
         .login-input {
-            width: 100%; max-width: 320px; background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
-            padding: 18px; color: white; font-size: 1.1rem; margin-bottom: 15px;
+            width: 100%; max-width: 300px; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 15px; color: white; font-size: 1rem; margin-bottom: 12px;
             outline: none; transition: 0.3s; text-align: center;
         }
         .login-input:focus { border-color: var(--gold); background: rgba(0,0,0,0.5); }
         .btn-start {
             background: linear-gradient(135deg, var(--gold), #8f7218);
-            color: black; border: none; padding: 20px 50px; border-radius: 50px;
-            font-weight: bold; font-size: 1.2rem; margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
-            text-transform: uppercase; letter-spacing: 2px;
+            color: black; border: none; padding: 18px 45px; border-radius: 50px;
+            font-weight: bold; font-size: 1.1rem; margin-top: 15px;
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
+            text-transform: uppercase; letter-spacing: 1px;
         }
 
         /* --- GAME LAYOUT --- */
         #game-table {
             flex: 1; background: var(--felt-gradient);
             position: relative; display: none; flex-direction: column;
+            padding-bottom: 90px; /* Espace pour les boutons */
         }
 
-        /* --- TOP BAR (DEALER + INFO) --- */
+        /* --- TOP BAR (DEALER) --- */
         .top-bar {
-            height: 25vh; position: relative; width: 100%;
-            display: flex; justify-content: center; align-items: flex-start;
-            padding-top: 10px;
+            height: 22%; /* Zone définie pour le croupier */
+            width: 100%;
+            display: flex; justify-content: center; align-items: flex-end; /* Aligné en bas de la zone top */
+            padding-bottom: 10px;
+            position: relative;
+            margin-top: env(safe-area-inset-top); /* Sécurité iPhone */
+            padding-top: 20px; /* Marge de sécurité visuelle supplémentaire */
         }
         
-        /* Dealer Cards Center */
         .dealer-container {
             display: flex; flex-direction: column; align-items: center;
-            transform: scale(0.85); transform-origin: top center;
+            /* On s'assure que le croupier n'est pas trop gros */
+            transform: scale(0.9); transform-origin: bottom center;
         }
 
-        /* --- OPPONENT (CORNER MINI VIEW) --- */
+        /* --- OPPONENT (Mini View - TOP RIGHT) --- */
         .opponent-mini {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+            position: absolute; top: max(10px, env(safe-area-inset-top)); right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
             display: flex; flex-direction: column; align-items: center;
-            transform-origin: top right;
-            backdrop-filter: blur(5px);
-            max-width: 120px;
+            backdrop-filter: blur(4px);
+            z-index: 50;
+        }
+        .opponent-name { font-size: 0.65rem; color: #ccc; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
+        .opponent-cards-row { display: flex; height: var(--card-h-mini); }
+        .opponent-cards-row .card { 
+            width: var(--card-w-mini); height: var(--card-h-mini); 
+            margin-left: -5vw; border-radius: 4px; font-size: 0.6rem;
+        }
+        .opponent-cards-row .card:first-child { margin-left: 0; }
+
+        /* --- CENTER AREA (MESSAGE) --- */
+        #status-toast {
+            position: absolute; 
+            top: 24%; /* Placé SOUS le croupier, pas sur le joueur */
+            left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: var(--gold); 
+            padding: 8px 20px;
+            border-radius: 30px; border: 1px solid var(--gold);
+            font-size: 1.1rem; text-align: center; font-family: 'Oswald', sans-serif;
+            opacity: 0; pointer-events: none; transition: 0.3s; 
+            white-space: nowrap; z-index: 40;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
-        .opponent-name { font-size: 0.7rem; color: #aaa; margin-bottom: 2px; }
-        .opponent-cards-row { display: flex; height: var(--card-h-mini); }
-        .opponent-cards-row .card { width: var(--card-w-mini); height: var(--card-h-mini); margin-left: -6vw; border-radius: 3px; font-size: 0.6rem;}
-        .opponent-cards-row .card:first-child { margin-left: 0; }
-        
-        /* Host View for Seat 0/1 (Balanced) */
-        .host-seat-view {
-             /* Specific styling if host wants to see players differently, 
-                but here we reuse opponent-mini logic or main player logic dynamically */
-        }
+        #status-toast.visible { opacity: 1; transform: translateX(-50%) scale(1.05); }
 
-        /* --- MAIN PLAYER (HERO AREA) --- */
+        /* --- HERO PLAYER (BOTTOM) --- */
         .hero-player {
-            flex: 1; display: flex; flex-direction: column; 
-            justify-content: flex-end; align-items: center;
-            padding-bottom: 110px; /* Space for controls */
+            flex: 1; /* Prend tout l'espace restant */
+            display: flex; flex-direction: column; 
+            justify-content: center; /* Centre verticalement dans l'espace restant */
+            align-items: center;
             position: relative;
         }
         
-        .hero-info {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-            background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px;
-            border: 1px solid rgba(255,215,0,0.3);
+        /* Mise affichée AU-DESSUS des cartes pour ne pas gêner */
+        .bet-display {
+            font-size: 1.4rem; color: rgba(255,255,255,0.8); font-family: 'Oswald', sans-serif;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px; /* Espace avant les cartes */
+            background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 10px;
         }
-        .hero-bank { color: var(--gold); font-family: 'Oswald', sans-serif; font-size: 1.2rem; }
-        
+
         .hero-cards-container {
-            display: flex; justify-content: center; align-items: flex-end;
+            display: flex; justify-content: center; align-items: center;
+            /* CRITIQUE : flex-row pour éviter l'empilement vertical */
+            flex-direction: row; 
             height: var(--card-h-big); width: 100%;
-            perspective: 1000px; margin-bottom: 20px;
+            perspective: 1000px; margin-bottom: 15px;
         }
+
+        .hero-info {
+            display: flex; align-items: center; gap: 10px; 
+            background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.8), rgba(0,0,0,0));
+            padding: 5px 30px;
+            border-top: 1px solid rgba(255,215,0,0.2);
+            margin-bottom: 5px;
+        }
+        .hero-bank { color: var(--success); font-family: 'Oswald', sans-serif; font-size: 1.2rem; font-weight: bold; }
 
         /* --- CARDS --- */
         .card {
             background: white; border-radius: 6px; color: black;
             display: flex; flex-direction: column; justify-content: space-between; padding: 4px;
-            font-weight: bold; box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-            position: relative; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold; box-shadow: -2px 0 10px rgba(0,0,0,0.4);
+            position: relative; transition: transform 0.3s ease-out;
         }
         .hero-cards-container .card {
             width: var(--card-w-big); height: var(--card-h-big);
-            margin-left: -12vw; /* Overlap Big */
-            font-size: 1.5rem;
+            margin-left: -11vw; /* Chevauchement horizontal */
+            font-size: 1.4rem;
             border-radius: 8px;
+            /* S'assurer que les cartes ne rétrécissent pas */
+            flex-shrink: 0; 
         }
         .hero-cards-container .card:first-child { margin-left: 0; }
         
-        /* Split layout adjustment */
-        .split-layout .cards-wrapper { transform: scale(0.85); margin: 0 5px; }
-        .hero-cards-container.split-mode { align-items: center; }
-
+        /* Mode Split */
+        .hero-cards-container.split-mode .card { margin-left: -16vw; transform: scale(0.9); }
+        
         .card.red { color: #c0392b; }
         .card.black { color: #2c3e50; }
         .card.back { 
-            background: repeating-linear-gradient(45deg, #2c3e50, #2c3e50 5px, #34495e 5px, #34495e 10px);
-            border: 2px solid white;
+            background: repeating-linear-gradient(45deg, #182C61, #182C61 5px, #1a3375 5px, #1a3375 10px);
+            border: 2px solid #fff;
         }
         .card.back * { display: none; }
-        .suit-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5em; opacity: 0.8; }
+        .suit-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.2em; opacity: 0.8; }
         
+        /* Bulle de score */
         .score-badge {
-            position: absolute; top: -15px; right: -5px;
+            position: absolute; top: -12px; right: -8px;
             background: var(--gold); color: black; font-weight: bold;
-            padding: 2px 8px; border-radius: 10px; font-size: 0.9rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 50;
+            padding: 2px 6px; border-radius: 8px; font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 60;
+            border: 1px solid white;
         }
 
         /* --- CONTROLS --- */
         .controls-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            padding: 15px 15px 30px 15px; /* Safe area padding */
-            background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0.8));
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-            z-index: 100; border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 10px max(15px, env(safe-area-inset-bottom)) 10px;
+            background: rgba(0,0,0,0.95);
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            z-index: 100; border-top: 1px solid rgba(255,255,255,0.15);
         }
         
         .ctrl-btn {
             background: #333; color: white; border: none;
-            padding: 18px 0; border-radius: 12px;
-            font-family: 'Oswald', sans-serif; font-size: 1.1rem; letter-spacing: 1px;
+            padding: 15px 0; border-radius: 10px;
+            font-family: 'Oswald', sans-serif; font-size: 1rem; letter-spacing: 0.5px;
             box-shadow: 0 4px 0 rgba(0,0,0,0.5);
             transition: all 0.1s; opacity: 0.3; pointer-events: none;
+            display: flex; justify-content: center; align-items: center;
         }
-        .ctrl-btn.active { opacity: 1; pointer-events: all; }
+        .ctrl-btn.active { opacity: 1; pointer-events: all; cursor: pointer; }
         .ctrl-btn:active { transform: translateY(4px); box-shadow: none; }
         
-        .btn-hit { background: var(--success); color: #000; grid-column: span 1; }
-        .btn-stand { background: var(--danger); color: white; grid-column: span 1; }
-        .btn-double { background: var(--gold); color: black; grid-column: span 1; }
-        .btn-split { background: var(--action); color: white; grid-column: span 1; }
+        /* Couleurs Néon pour visibilité */
+        .btn-hit { background: var(--success); color: #000; box-shadow: 0 4px 0 #1e8e4c; }
+        .btn-stand { background: var(--danger); color: white; box-shadow: 0 4px 0 #c0392b; }
+        .btn-double { background: var(--gold); color: black; box-shadow: 0 4px 0 #9e8228; }
+        .btn-split { background: var(--action); color: white; box-shadow: 0 4px 0 #192a56; }
         
         .btn-deal { 
             grid-column: span 4; background: linear-gradient(90deg, var(--gold), #fff5c3, var(--gold));
-            color: black; font-size: 1.3rem; animation: shine 3s infinite;
+            color: black; font-size: 1.2rem; animation: shine 3s infinite; box-shadow: 0 4px 0 #b8860b;
         }
 
         /* --- CHIPS DRAWER --- */
         .betting-overlay {
-            position: absolute; bottom: 120px; width: 100%;
-            display: flex; justify-content: center; align-items: flex-end; gap: 10px;
-            transition: 0.4s; transform: translateY(200px); opacity: 0; pointer-events: none;
+            position: absolute; bottom: 100px; width: 100%;
+            display: flex; justify-content: center; align-items: flex-end; gap: 8px;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            transform: translateY(200px); opacity: 0; pointer-events: none;
+            padding-bottom: 10px;
         }
         .betting-overlay.show { transform: translateY(0); opacity: 1; pointer-events: all; }
         
         .chip {
             width: var(--chip-size); height: var(--chip-size);
-            border-radius: 50%; border: 3px dashed rgba(255,255,255,0.5);
+            border-radius: 50%; border: 3px dashed rgba(255,255,255,0.6);
             display: flex; justify-content: center; align-items: center;
-            font-weight: bold; font-family: 'Oswald', sans-serif;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            background-size: cover; cursor: pointer;
+            font-weight: bold; font-family: 'Oswald', sans-serif; font-size: 0.9rem;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.6); cursor: pointer;
         }
         .chip:active { transform: scale(0.9); }
-        .chip-10 { background: #e74c3c; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .chip-50 { background: #3498db; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .chip-100 { background: #2ecc71; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .chip-500 { background: #34495e; border-color: var(--gold); color: var(--gold); }
+        .chip-10 { background: #e74c3c; }
+        .chip-50 { background: #3498db; }
+        .chip-100 { background: #2ecc71; }
+        .chip-500 { background: #2c3e50; border-color: var(--gold); color: var(--gold); }
         
-        .bet-display {
-            position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%);
-            font-size: 1.5rem; color: var(--gold); font-family: 'Oswald', sans-serif;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        /* --- MESSAGES --- */
-        #status-toast {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 15px 30px;
-            border-radius: 50px; border: 1px solid var(--gold);
-            font-size: 1.5rem; text-align: center; font-family: 'Oswald', sans-serif;
-            opacity: 0; pointer-events: none; transition: 0.3s; width: 80%;
-            z-index: 500; backdrop-filter: blur(5px);
-        }
-        #status-toast.visible { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-
     </style>
 </head>
 <body>
@@ -247,46 +266,48 @@
         <div class="top-bar">
             <!-- Dealer -->
             <div class="dealer-container">
-                <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">CROUPIER</div>
-                <div id="dealer-hand" class="hero-cards-container" style="height:var(--card-h-mini);"></div>
-                <div id="dealer-score" class="score-badge" style="display:none;">0</div>
+                <div style="font-size:0.7rem; color:#888; margin-bottom:4px; letter-spacing: 1px;">CROUPIER</div>
+                <!-- On force le flex row ici aussi -->
+                <div id="dealer-hand" class="hero-cards-container" style="height:var(--card-h-mini); width: auto; min-width: 100px;"></div>
+                <div id="dealer-score" class="score-badge" style="display:none; top: 50%; right: -25px;">0</div>
             </div>
 
             <!-- OPPONENT (Mini View) -->
             <div id="opponent-view" class="opponent-mini" style="display:none;">
                 <div id="opp-name" class="opponent-name">Adversaire</div>
                 <div id="opp-hand" class="opponent-cards-row"></div>
-                <div id="opp-score" style="position:absolute; bottom:-10px; right:-5px; background:grey; font-size:0.6rem; padding:2px 5px; border-radius:4px;">0</div>
+                <div id="opp-score" style="position:absolute; bottom:-8px; right:-5px; background:#444; color:white; font-size:0.6rem; padding:1px 5px; border-radius:4px; border:1px solid #777;">0</div>
             </div>
         </div>
 
-        <!-- CENTER MESSAGE -->
+        <!-- CENTER MESSAGE (MOVED UP) -->
         <div id="status-toast">MESSAGE</div>
 
         <!-- BOTTOM: HERO PLAYER -->
         <div class="hero-player">
-            <!-- Bet Display on table -->
+            <!-- Bet moved UP -->
             <div class="bet-display" id="my-bet-display"></div>
 
+            <!-- Cards Container fixed with flex-direction: row -->
             <div class="hero-cards-container" id="my-hand-container">
                 <!-- Cards injected here -->
             </div>
 
             <div class="hero-info">
-                <span id="my-name">Moi</span>
-                <span style="color:#555">|</span>
+                <span id="my-name" style="color:#aaa;">Moi</span>
+                <span style="color:#444; margin: 0 10px;">|</span>
                 <span class="hero-bank">$<span id="my-bank">0</span></span>
             </div>
         </div>
 
         <!-- CHIPS DRAWER -->
         <div id="chip-drawer" class="betting-overlay">
-            <div class="chip" style="background:#333; font-size:1.5rem; color:red; border-color:red;" onclick="placeBet(-1)">×</div>
+            <div class="chip" style="background:#222; font-size:1.5rem; color:var(--danger); border-color:var(--danger);" onclick="placeBet(-1)">×</div>
             <div class="chip chip-10" onclick="placeBet(10)">10</div>
             <div class="chip chip-50" onclick="placeBet(50)">50</div>
             <div class="chip chip-100" onclick="placeBet(100)">100</div>
             <div class="chip chip-500" onclick="placeBet(500)">500</div>
-            <div class="chip" style="background:var(--gold); border-color:white; color:black;" onclick="validateBet()">OK</div>
+            <div class="chip" style="background:var(--gold); border-color:white; color:black;" onclick="validateBet()">GO</div>
         </div>
 
         <!-- CONTROLS -->
@@ -296,7 +317,7 @@
             <button id="btn-double" class="ctrl-btn btn-double" onclick="clientAction('DOUBLE')">DOUBLE</button>
             <button id="btn-split" class="ctrl-btn btn-split" onclick="clientAction('SPLIT')">SPLIT</button>
             
-            <!-- Host Button (Overlays others if active) -->
+            <!-- Host Button -->
             <button id="btn-deal" class="ctrl-btn btn-deal" style="display:none;" onclick="hostDeal()">DISTRIBUER</button>
             <button id="btn-open" class="ctrl-btn btn-deal" style="display:none;" onclick="hostOpenTable()">OUVRIR LA TABLE</button>
         </div>
@@ -460,11 +481,11 @@
                 
                 const sc = isSplit ? p.splitScore : p.score;
                 if(sc > 21) {
-                    if(isSplit) p.splitStatus = 'busted'; else p.status = 'busted'; // Fixed variable name
+                    if(isSplit) p.splitStatus = 'busted'; else p.status = 'busted'; 
                     advance();
                 }
             } else if(act === 'STAND') {
-                if(isSplit) p.splitStatus = 'stand'; else p.status = 'stand'; // Fixed variable name
+                if(isSplit) p.splitStatus = 'stand'; else p.status = 'stand'; 
                 advance();
             } else if(act === 'DOUBLE' && !isSplit && p.bankroll >= p.bet) {
                 p.bankroll -= p.bet; p.bet *= 2;
@@ -481,7 +502,6 @@
                 p.score = calc(p.hand);
                 p.splitScore = calc(p.splitHand);
                 p.splitStatus = 'playing';
-                // Stay on main hand
             }
             broadcast();
         }
@@ -492,7 +512,6 @@
                 gameState.activeHandSubIndex = 1;
                 return;
             }
-            // Next player
             let next = -1;
             for(let i = gameState.activePlayerIndex + 1; i < 2; i++) {
                 if(gameState.players[i].status === 'playing') { next = i; break; }
@@ -595,12 +614,12 @@
             // Toast Status
             const toast = ui.status;
             let msg = "";
-            if(gameState.phase === 'lobby') msg = "ATTENTE DU JEU";
+            if(gameState.phase === 'lobby') msg = "EN ATTENTE";
             if(gameState.phase === 'betting') msg = "FAITES VOS JEUX";
-            if(gameState.phase === 'payout') msg = "RESULTATS";
+            if(gameState.phase === 'payout') msg = "RÉSULTATS";
             if(gameState.phase === 'turn') {
                 const activeP = gameState.players[gameState.activePlayerIndex];
-                if(gameState.activePlayerIndex === mySeatIndex) msg = "A TOI DE JOUER";
+                if(gameState.activePlayerIndex === mySeatIndex) msg = "À TOI DE JOUER";
                 else msg = `TOUR DE ${activeP.name}`;
             }
             if(msg) { toast.innerText = msg; toast.classList.add('visible'); }
@@ -621,7 +640,6 @@
                 me = gameState.players[mySeatIndex];
                 opp = gameState.players[mySeatIndex === 0 ? 1 : 0];
             } else {
-                // Host View: Show Seat 0 as "Me" visually, Seat 1 as Opponent (for now)
                 me = gameState.players[0];
                 opp = gameState.players[1];
             }
@@ -645,9 +663,10 @@
             // Cards Main
             const myTurn = (gameState.phase === 'turn' && gameState.activePlayerIndex === (myRole==='CLIENT'?mySeatIndex:0));
             
-            // Helper wrapper
+            // Helper wrapper for Main Hand
             const wrap = document.createElement('div');
-            wrap.className = `cards-wrapper ${me.splitHand ? 'split-mode' : ''}`;
+            // Important : on n'utilise plus de classe générique mais un style inline pour forcer le layout horizontal
+            wrap.className = `hero-cards-container ${me.splitHand ? 'split-mode' : ''}`;
             
             // Score Bubble
             if(me.hand.length>0) {
@@ -658,11 +677,11 @@
             me.hand.forEach((c, i) => wrap.appendChild(createCard(c, i, false, true)));
             ui.myHand.appendChild(wrap);
 
-            // Split Hand
+            // Split Hand (si existe)
             if(me.splitHand) {
                 const wrapS = document.createElement('div');
-                wrapS.className = 'cards-wrapper split-mode';
-                if(myTurn && gameState.activeHandSubIndex === 1) wrapS.style.transform = "scale(1.1)"; // Highlight
+                wrapS.className = 'hero-cards-container split-mode';
+                if(myTurn && gameState.activeHandSubIndex === 1) wrapS.style.transform = "scale(1.1)"; 
                 
                 const sbS = document.createElement('div');
                 sbS.className = 'score-badge'; sbS.innerText = me.splitScore;
@@ -689,14 +708,12 @@
                 ui.btns.deal.style.display = 'block';
                 if(gameState.phase === 'lobby') ui.btns.open.classList.add('active');
                 if(gameState.phase === 'betting') {
-                   // Check readiness
                    const activeP = gameState.players.filter(p=>p.status!=='empty');
                    if(activeP.length > 0 && activeP.every(p=>p.status==='ready')) ui.btns.deal.classList.add('active');
                 }
             } else if (myRole === 'CLIENT' && myTurn) {
                 ['hit', 'stand', 'double', 'split'].forEach(k => { ui.btns[k].style.display = 'block'; ui.btns[k].classList.add('active'); });
                 
-                // Rule check
                 const activeH = (gameState.activeHandSubIndex === 0) ? me.hand : me.splitHand;
                 const activeBet = (gameState.activeHandSubIndex === 0) ? me.bet : me.splitBet;
 
@@ -709,7 +726,6 @@
             const el = document.createElement('div');
             el.className = `card ${c.color} ${hidden ? 'back' : ''}`;
             if(big && !hidden) {
-                // Better styling for big cards
                 el.innerHTML = `
                     <div style="font-size:1em; line-height:1;">${c.r}<br>${c.s}</div>
                     <div class="suit-center">${c.s}</div>
