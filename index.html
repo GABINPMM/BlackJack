@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ROYAL BLACKJACK - 3 Players Table</title>
+    <title>ROYAL BLACKJACK - Mobile Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;700&display=swap');
@@ -14,194 +14,212 @@
             --wood-dark: #3e2723;
             --gold: #ffd700;
             --gold-dim: #b8860b;
-            --card-w: 80px;
-            --card-h: 112px;
-            --chip-size: 45px;
+            /* Mobile optimized sizes (Viewport Width based) */
+            --card-w: 16vw; 
+            --card-h: 22vw;
+            --chip-size: 14vw;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         body {
-            margin: 0; height: 100vh; background: #111;
+            margin: 0; height: 100vh; height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            background: #000;
             font-family: 'Roboto', sans-serif; overflow: hidden;
             display: flex; flex-direction: column;
         }
 
-        /* --- LOGIN --- */
+        /* --- LOGIN (MOBILE FRIENDLY) --- */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
             display: flex; align-items: center; justify-content: center; z-index: 9999;
+            padding: 20px;
         }
         .login-card {
             background: linear-gradient(to bottom, #2c2c2c, #1a1a1a);
-            border: 2px solid var(--gold-dim); padding: 40px; border-radius: 8px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            width: 90%; max-width: 450px; position: relative;
+            border: 2px solid var(--gold-dim); padding: 30px 20px; border-radius: 15px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            width: 100%; max-width: 400px;
         }
-        .login-card h1 { font-family: 'Playfair Display', serif; color: var(--gold); margin: 0 0 20px 0; }
-        .input-group { margin-bottom: 20px; text-align: left; }
+        .login-card h1 { font-family: 'Playfair Display', serif; color: var(--gold); margin: 0 0 20px 0; font-size: 1.8rem; }
+        .input-group { margin-bottom: 15px; text-align: left; }
         input {
             width: 100%; background: #000; border: 1px solid #444; color: var(--gold);
-            padding: 12px; font-size: 1.1rem; border-radius: 4px; outline: none;
+            padding: 15px; font-size: 1rem; border-radius: 8px; outline: none;
+            -webkit-appearance: none; /* iOS fix */
         }
         .btn-gold {
             background: linear-gradient(to bottom, var(--gold), var(--gold-dim));
-            border: none; color: #000; padding: 15px 30px; font-weight: bold;
-            font-size: 1.1rem; border-radius: 4px; cursor: pointer; width: 100%;
+            border: none; color: #000; padding: 18px; font-weight: bold;
+            font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 100%;
             text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 5px 15px rgba(184, 134, 11, 0.3);
+            margin-top: 10px;
         }
+        .btn-gold:active { transform: scale(0.98); }
 
-        /* --- TABLE --- */
+        /* --- TABLE LAYOUT --- */
         #game-table {
             flex: 1;
             background: radial-gradient(circle at center, var(--felt-main), var(--felt-dark));
             position: relative; display: none; flex-direction: column;
-            border: 20px solid var(--wood-dark); border-radius: 40px; margin: 10px;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+            /* Removed thick border for mobile space */
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
         }
 
+        /* Decoration line */
         .table-line {
-            position: absolute; top: 30%; left: 10%; right: 10%; height: 150px;
-            border: 2px solid rgba(255,215,0,0.15); border-bottom: none;
-            border-radius: 100px 100px 0 0; pointer-events: none;
+            position: absolute; top: 25%; left: 5%; right: 5%; height: 100px;
+            border: 2px solid rgba(255,215,0,0.1); border-bottom: none;
+            border-radius: 50% 50% 0 0 / 20px 20px 0 0; pointer-events: none;
         }
 
         /* --- ZONES --- */
         .dealer-zone {
-            flex: 0.8; display: flex; flex-direction: column; align-items: center; padding-top: 15px;
+            flex: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding-top: 10px;
         }
         
         .players-container {
-            flex: 2; display: flex; width: 100%; padding: 0 10px; gap: 10px;
+            flex: 1.4; display: flex; width: 100%; 
+            padding: 0 5px 80px 5px; /* Bottom padding for action bar space */
+            gap: 5px;
         }
         .player-seat {
-            flex: 1; border-top: 2px dashed rgba(255,255,255,0.05);
+            flex: 1; 
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            border-radius: 10px 10px 0 0;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-            padding-bottom: 20px; position: relative;
+            padding-bottom: 10px; position: relative;
             transition: background 0.3s;
+            overflow: hidden; /* Prevent spill */
         }
         .player-seat.active-turn {
-            background: rgba(255, 215, 0, 0.05);
-            box-shadow: 0 -10px 20px rgba(255, 215, 0, 0.05);
+            background: linear-gradient(to top, rgba(255, 215, 0, 0.1), transparent);
+            box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1);
+            border-top-color: var(--gold);
         }
 
-        /* --- CARDS & SPLIT --- */
+        /* --- CARDS --- */
         .cards-area {
-            display: flex; justify-content: center; width: 100%;
+            display: flex; justify-content: center; width: 100%; flex-grow: 1; align-items: center;
         }
         .cards-wrapper {
-            display: flex; justify-content: center; height: var(--card-h); min-width: 100px;
-            perspective: 1000px; margin-bottom: 5px; transition: all 0.3s;
+            display: flex; justify-content: center; height: var(--card-h); min-width: 50px;
+            perspective: 800px; margin-bottom: 5px; transition: all 0.3s;
         }
-        .split-col {
-            transform: scale(0.85); margin: 0 -10px; /* Smaller cards if split */
-        }
-        .active-hand {
-            filter: drop-shadow(0 0 10px var(--gold)); transform: scale(0.95) translateY(-5px);
-        }
-
+        .split-col { transform: scale(0.8); margin: 0 -5px; } /* Tight fit for split */
+        
         .card {
-            width: var(--card-w); height: var(--card-h); background: #fff; border-radius: 6px;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.4); position: relative; margin-left: -50px;
-            display: flex; flex-direction: column; justify-content: space-between; padding: 5px;
-            font-weight: bold; font-size: 1.2rem; border: 1px solid #ddd;
+            width: var(--card-w); height: var(--card-h); 
+            background: #fff; border-radius: 4px;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.5); 
+            position: relative; margin-left: calc(var(--card-w) * -0.6); /* Tight overlap */
+            display: flex; flex-direction: column; justify-content: space-between; padding: 2px 4px;
+            font-weight: bold; font-size: 0.9rem; border: 1px solid #ddd;
             transition: transform 0.3s;
         }
         .card:first-child { margin-left: 0; }
-        .card:hover { transform: translateY(-15px); z-index: 10; }
         .card.red { color: #d32f2f; }
         .card.black { color: #212121; }
-        .suit-big { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; opacity: 0.8; }
+        .suit-big { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.5rem; opacity: 0.8; }
         .val-btm { transform: rotate(180deg); text-align: right; }
-        .card.back { background: repeating-linear-gradient(45deg, #1a237e 0, #1a237e 5px, #283593 5px, #283593 10px); }
+        .card.back { background: repeating-linear-gradient(45deg, #1a237e 0, #1a237e 4px, #283593 4px, #283593 8px); border: 1px solid #fff; }
         .card.back * { display: none; }
 
-        /* --- SCORES & CHIPS --- */
-        .score-bubble {
-            background: #000; color: #fff; padding: 2px 8px; border-radius: 12px;
-            font-size: 0.8rem; border: 1px solid var(--gold); margin-top: 5px;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .score-bubble.visible { opacity: 1; }
-
+        /* --- CHIPS & INFO --- */
         .betting-spot {
-            width: 80px; height: 80px; border: 3px dashed rgba(255,215,0,0.3); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; margin-bottom: 5px;
+            width: 15vw; height: 15vw; 
+            border: 2px dashed rgba(255,215,0,0.3); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; margin-bottom: 2px;
             background: rgba(0,0,0,0.2); transition: all 0.3s;
         }
-        .betting-spot.active { border-color: var(--gold); }
+        .betting-spot.active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+        
         .chip {
-            width: var(--chip-size); height: var(--chip-size); border-radius: 50%; border: 3px dashed #fff;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
-            font-weight: bold; color: #fff; cursor: pointer; font-size: 0.75rem;
+            width: var(--chip-size); height: var(--chip-size); 
+            border-radius: 50%; border: 2px dashed #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5); 
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; color: #fff; cursor: pointer; font-size: 0.7rem;
+            flex-shrink: 0;
         }
-        .chip-stack div { position: absolute; margin-top: -5px; }
+        .chip-in-stack { position: absolute; top:0; left:0; transform: none !important; } /* Simplify stack for mobile performance */
+        .chip-stack { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .chip-stack .chip { position: absolute; } 
 
         .chip-10 { background: radial-gradient(#e53935, #b71c1c); }
         .chip-50 { background: radial-gradient(#1e88e5, #0d47a1); }
         .chip-100 { background: radial-gradient(#43a047, #1b5e20); }
         .chip-500 { background: radial-gradient(#333, #000); border-color: var(--gold); color: var(--gold); }
 
-        /* --- UI CONTROLS --- */
-        .ui-panel { position: absolute; top: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
-        .stats-box {
-            background: rgba(0,0,0,0.7); color: var(--gold); padding: 5px 12px; border-radius: 4px;
-            border: 1px solid var(--gold-dim); font-family: 'Playfair Display', serif; text-align: center;
-            font-size: 0.9rem;
-        }
         .player-info {
-            background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px;
-            text-align: center; margin-bottom: 5px; width: 100%; font-size: 0.9rem;
+            background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 10px;
+            text-align: center; margin-bottom: 2px; width: 90%; font-size: 0.75rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* --- UI CONTROLS (MOBILE BOTTOM BAR) --- */
+        .ui-panel { 
+            position: absolute; top: 0; width: 100%; padding: 10px; 
+            display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
+        }
+        .stats-box {
+            background: rgba(0,0,0,0.6); color: var(--gold); padding: 4px 8px; border-radius: 4px;
+            border: 1px solid var(--gold-dim); font-size: 0.7rem; text-align: center;
         }
 
         .action-bar {
-            position: absolute; bottom: 50%; transform: translateY(50%); width: 100%;
-            display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; z-index: 100;
-            flex-wrap: wrap; padding: 0 10px;
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.9); border-top: 1px solid var(--gold-dim);
+            padding: 15px 10px; z-index: 200;
+            display: flex; justify-content: space-around; align-items: center;
+            padding-bottom: max(15px, env(safe-area-inset-bottom)); /* iPhone Home Bar safe area */
         }
-        .action-btn {
-            pointer-events: all; padding: 12px 24px; border-radius: 30px; border: none;
-            font-weight: bold; text-transform: uppercase; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transform: scale(0.8); transition: all 0.3s;
-            min-width: 90px;
-        }
-        .action-btn.visible { opacity: 1; transform: scale(1); }
         
-        .btn-hit { background: #4caf50; color: white; }
-        .btn-stand { background: #f44336; color: white; }
-        .btn-double { background: #ff9800; color: black; } /* Orange */
-        .btn-split { background: #2196f3; color: white; } /* Blue */
-        .btn-deal { background: var(--gold); color: black; padding: 15px 40px; font-size: 1.2rem; }
+        .action-btn {
+            padding: 15px 10px; border-radius: 8px; border: none; flex: 1; margin: 0 4px;
+            font-weight: bold; text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.4); font-size: 0.9rem;
+            opacity: 0.3; pointer-events: none; transition: all 0.2s;
+            max-width: 100px; white-space: nowrap;
+        }
+        .action-btn:active { transform: translateY(4px); box-shadow: none; }
+        .action-btn.visible { opacity: 1; pointer-events: all; }
+        
+        .btn-hit { background: #2ecc71; color: #fff; }
+        .btn-stand { background: #e74c3c; color: #fff; }
+        .btn-double { background: #f1c40f; color: #000; } 
+        .btn-split { background: #3498db; color: #fff; }
+        .btn-deal { background: var(--gold); color: #000; flex: 2; font-size: 1.1rem; }
 
+        /* Chip Rack (Float above action bar) */
         .chip-rack {
-            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; padding: 8px; background: rgba(0,0,0,0.8); border-radius: 40px;
-            border: 1px solid var(--gold); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 50;
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) scale(0.9);
+            display: flex; gap: 8px; padding: 10px 20px; 
+            background: rgba(0,0,0,0.85); border-radius: 50px;
+            border: 1px solid var(--gold); 
+            opacity: 0; pointer-events: none; transition: 0.3s; z-index: 190;
         }
-        .chip-rack.visible { opacity: 1; pointer-events: all; }
+        .chip-rack.visible { opacity: 1; pointer-events: all; transform: translateX(-50%) scale(1); }
 
+        /* Messages */
         #game-message {
-            position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9); color: var(--gold); padding: 15px 30px;
-            border: 2px solid var(--gold); font-family: 'Playfair Display', serif;
-            font-size: 1.5rem; display: none; z-index: 200; text-align: center; width: 80%;
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); color: var(--gold); padding: 15px 20px;
+            border: 1px solid var(--gold); font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; display: none; z-index: 100; text-align: center; width: 90%;
+            border-radius: 8px; pointer-events: none;
         }
 
-        /* --- MOBILE OPTIMIZATION --- */
-        @media (max-width: 768px) {
-            :root { --card-w: 55px; --card-h: 77px; --chip-size: 40px; }
-            #game-table { margin: 0; border-width: 10px; border-radius: 0; }
-            .players-container { padding: 0 5px; }
-            .action-bar { bottom: 45%; gap: 8px; }
-            .action-btn { padding: 10px 15px; font-size: 0.9rem; min-width: 70px; }
-            .stats-box { font-size: 0.75rem; padding: 4px 8px; }
-            #game-message { font-size: 1.2rem; }
-            .dealer-zone { padding-top: 40px; } /* Space for stats */
-            .betting-spot { width: 60px; height: 60px; }
-            .score-bubble { font-size: 0.7rem; padding: 1px 5px; }
+        .score-bubble {
+            background: #000; color: #fff; padding: 2px 6px; border-radius: 10px;
+            font-size: 0.7rem; border: 1px solid var(--gold); margin-top: -5px; margin-bottom: 2px;
+            opacity: 0; z-index: 20;
         }
+        .score-bubble.visible { opacity: 1; }
+
     </style>
 </head>
 <body>
@@ -211,16 +229,16 @@
         <div class="login-card">
             <h1>Royal 3-Play</h1>
             <div class="input-group">
-                <input type="text" id="room-input" placeholder="Nom du Salon (ID)" value="LOUNGE">
+                <input type="text" id="room-input" placeholder="ID Salon" value="LOUNGE">
             </div>
             <div class="input-group">
-                <input type="text" id="user-input" placeholder="Votre Pseudo">
+                <input type="text" id="user-input" placeholder="Pseudo">
             </div>
             <div class="input-group">
-                <input type="number" id="bank-input" value="1000" placeholder="Bankroll ($)">
+                <input type="number" id="bank-input" value="1000" placeholder="Bankroll">
             </div>
-            <button class="btn-gold" onclick="initLogin()">Rejoindre la Table</button>
-            <p id="status-text" style="color:#aaa; margin-top:10px; font-size:0.9rem; font-style:italic;"></p>
+            <button class="btn-gold" onclick="initLogin()">JOUER</button>
+            <p id="status-text" style="color:#aaa; margin-top:15px; font-size:0.8rem; line-height:1.4;"></p>
         </div>
     </div>
 
@@ -231,71 +249,68 @@
         <!-- DEALER ZONE -->
         <div class="ui-panel">
             <div class="stats-box">
-                <small>CROUPIER</small><br>
                 <span id="dealer-name">Banque</span>
             </div>
             <div class="stats-box">
-                <small>CLIENTS</small><br>
-                <span id="player-count">0</span>/2
+                <span id="player-count">0</span>/2 JOUEURS
             </div>
         </div>
 
         <div class="dealer-zone">
-            <div id="dealer-cards" class="cards-wrapper"></div>
             <div id="dealer-score-bubble" class="score-bubble">0</div>
+            <div id="dealer-cards" class="cards-wrapper"></div>
         </div>
 
-        <div id="game-message">ATTENTE JOUEURS...</div>
+        <div id="game-message">ATTENTE...</div>
 
-        <!-- ACTION BUTTONS CENTER -->
-        <div class="action-bar">
-            <button id="btn-open" class="action-btn btn-deal" onclick="hostOpenTable()">OUVRIR LA TABLE</button>
-            <button id="btn-deal" class="action-btn btn-deal" onclick="hostDeal()">DISTRIBUER</button>
-            
-            <!-- Player Actions -->
-            <button id="btn-hit" class="action-btn btn-hit" onclick="clientAction('HIT')">TIRE</button>
-            <button id="btn-stand" class="action-btn btn-stand" onclick="clientAction('STAND')">RESTE</button>
-            <button id="btn-double" class="action-btn btn-double" onclick="clientAction('DOUBLE')">DOUBLE</button>
-            <button id="btn-split" class="action-btn btn-split" onclick="clientAction('SPLIT')">SPLIT</button>
-        </div>
-
-        <!-- PLAYERS ZONE (SPLIT) -->
+        <!-- PLAYERS ZONE -->
         <div class="players-container">
             <!-- SEAT 1 -->
             <div id="seat-0" class="player-seat">
                 <div class="player-info">
-                    <span id="p0-name">Libre</span><br>
-                    <span style="color:var(--gold)">$<span id="p0-bank">0</span></span>
+                    <span id="p0-name">Libre</span> • <span style="color:var(--gold)">$<span id="p0-bank">0</span></span>
                 </div>
                 <div id="p0-hand-area" class="cards-area"></div>
                 <div class="betting-spot" id="p0-spot">
                     <div id="p0-chips" class="chip-stack"></div>
                 </div>
-                <div style="color:var(--gold); font-size:0.8rem;">Mise: $<span id="p0-bet">0</span></div>
+                <div style="color:var(--gold); font-size:0.7rem;">Mise: $<span id="p0-bet">0</span></div>
             </div>
 
             <!-- SEAT 2 -->
             <div id="seat-1" class="player-seat">
                 <div class="player-info">
-                    <span id="p1-name">Libre</span><br>
-                    <span style="color:var(--gold)">$<span id="p1-bank">0</span></span>
+                    <span id="p1-name">Libre</span> • <span style="color:var(--gold)">$<span id="p1-bank">0</span></span>
                 </div>
                 <div id="p1-hand-area" class="cards-area"></div>
                 <div class="betting-spot" id="p1-spot">
                     <div id="p1-chips" class="chip-stack"></div>
                 </div>
-                <div style="color:var(--gold); font-size:0.8rem;">Mise: $<span id="p1-bet">0</span></div>
+                <div style="color:var(--gold); font-size:0.7rem;">Mise: $<span id="p1-bet">0</span></div>
             </div>
         </div>
 
-        <!-- CLIENT CHIP RACK -->
+        <!-- CHIP RACK (FLOATING) -->
         <div id="chip-rack" class="chip-rack">
             <div class="chip chip-10" onclick="placeBet(10)">10</div>
             <div class="chip chip-50" onclick="placeBet(50)">50</div>
             <div class="chip chip-100" onclick="placeBet(100)">100</div>
             <div class="chip chip-500" onclick="placeBet(500)">500</div>
-            <div class="chip" style="border-color:red; background:#333;" onclick="placeBet(-1)">X</div>
-            <button class="action-btn visible" style="font-size:0.8rem; padding:5px 15px; min-width:auto;" onclick="validateBet()">OK</button>
+            <div class="chip" style="border-color:red; background:#333; font-size:1.2rem;" onclick="placeBet(-1)">×</div>
+            <div class="chip" style="background:var(--gold); color:#000; border:none;" onclick="validateBet()">OK</div>
+        </div>
+
+        <!-- ACTION BAR (BOTTOM FIXED) -->
+        <div class="action-bar">
+            <!-- Dealer Controls -->
+            <button id="btn-open" class="action-btn btn-deal" onclick="hostOpenTable()">OUVRIR TABLE</button>
+            <button id="btn-deal" class="action-btn btn-deal" onclick="hostDeal()">DISTRIBUER</button>
+            
+            <!-- Player Controls -->
+            <button id="btn-hit" class="action-btn btn-hit" onclick="clientAction('HIT')">TIRE</button>
+            <button id="btn-stand" class="action-btn btn-stand" onclick="clientAction('STAND')">RESTE</button>
+            <button id="btn-double" class="action-btn btn-double" onclick="clientAction('DOUBLE')">x2</button>
+            <button id="btn-split" class="action-btn btn-split" onclick="clientAction('SPLIT')">SPLIT</button>
         </div>
     </div>
 
@@ -324,8 +339,6 @@
             deck: [],
             dealer: { hand: [], score: 0 },
             players: [
-                // Hand structure: { cards:[], score:0, bet:0, status:'' }
-                // For Split: 'splitHand' property will be added dynamically
                 { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty', splitHand: null, splitBet: 0, splitScore: 0, splitStatus: '' },
                 { id: null, name: null, hand: [], score: 0, bankroll: 0, bet: 0, status: 'empty', splitHand: null, splitBet: 0, splitScore: 0, splitStatus: '' }
             ]
@@ -356,7 +369,7 @@
             if(!room || !user) return alert("Pseudo et Salon requis");
 
             const peerId = 'rbj3_' + room.toLowerCase().replace(/[^a-z0-9]/g, '');
-            ui.status.innerText = "Création du salon (Croupier)...";
+            ui.status.innerText = "Création du salon (Mode Croupier)...";
 
             const p = new Peer(peerId, peerConfig);
             
@@ -371,7 +384,7 @@
             
             p.on('error', (err) => {
                 if(err.type === 'unavailable-id') {
-                    ui.status.innerText = "Connexion Joueur...";
+                    ui.status.innerText = "Salon trouvé. Connexion Joueur...";
                     joinAsClient(peerId, user, bank);
                 } else {
                     ui.status.innerText = "Erreur: " + err.type;
@@ -652,8 +665,8 @@
             const msg = document.getElementById('game-message');
             msg.style.display = 'none';
             if(gameState.phase === 'lobby') {
-                msg.style.display = 'block'; msg.innerText = "ATTENTE DU CROUPIER...";
-                if(myRole === 'HOST') msg.innerText = "OUVRIR LA TABLE ?";
+                msg.style.display = 'block'; msg.innerText = "EN ATTENTE";
+                if(myRole === 'HOST') msg.innerText = "TABLE PRÊTE ?";
             }
             else if(gameState.phase === 'betting') { msg.style.display = 'block'; msg.innerText = "FAITES VOS JEUX"; }
             else if(gameState.phase === 'payout') { msg.style.display = 'block'; msg.innerText = "FIN DE MANCHE"; }
@@ -689,7 +702,7 @@
                         btns.split.classList.add('visible');
                     }
 
-                    msg.style.display = 'block'; msg.innerText = (gameState.activeHandSubIndex===1 ? "MAIN 2: A VOUS" : "A VOUS DE JOUER");
+                    msg.style.display = 'block'; msg.innerText = (gameState.activeHandSubIndex===1 ? "MAIN 2: A TOI" : "A TOI DE JOUER");
                 }
             }
 
@@ -699,7 +712,7 @@
                 const seatDiv = document.getElementById(`seat-${i}`);
                 const nameDiv = document.getElementById(`p0-name`.replace('0', i));
                 const bankDiv = document.getElementById(`p0-bank`.replace('0', i));
-                const betDiv = document.getElementById(`p0-bet`.replace('0', i));
+                // const betDiv = document.getElementById(`p0-bet`.replace('0', i));
                 const handArea = document.getElementById(`p0-hand-area`.replace('0', i));
                 const chipsDiv = document.getElementById(`p0-chips`.replace('0', i));
                 const spotDiv = document.getElementById(`p0-spot`.replace('0', i));
@@ -708,8 +721,9 @@
                 seatDiv.classList.toggle('active-turn', (gameState.phase === 'turn' && gameState.activePlayerIndex === i));
 
                 if(p.status === 'empty') {
-                    nameDiv.innerText = "Libre"; bankDiv.innerText = "-"; seatDiv.style.opacity = 0.5;
+                    nameDiv.innerText = "Libre"; bankDiv.innerText = "-"; seatDiv.style.opacity = 0.4;
                     handArea.innerHTML = '';
+                    spotDiv.classList.remove('active');
                 } else {
                     seatDiv.style.opacity = 1;
                     nameDiv.innerText = p.name + (mySeatIndex === i ? " (Moi)" : "");
@@ -719,15 +733,23 @@
                     let displayBet = p.bet;
                     if(myRole === 'CLIENT' && mySeatIndex === i && gameState.phase === 'betting' && p.status !== 'ready') displayBet = localBetDraft;
                     if(p.splitBet > 0) displayBet += p.splitBet; // Show total bet visually
-                    betDiv.innerText = displayBet;
+                    document.getElementById(`p0-bet`.replace('0', i)).innerText = displayBet;
                     
                     // Chips
                     chipsDiv.innerHTML = ''; spotDiv.classList.remove('active');
                     if(displayBet > 0) {
                         spotDiv.classList.add('active');
-                        const d = document.createElement('div');
-                        d.className = 'chip chip-100'; d.innerText = displayBet;
-                        chipsDiv.appendChild(d);
+                        // Mobile optimization: just show one chip with total value or stack representation
+                        // Let's create a visual stack of max 3 chips to save DOM
+                        const chipCount = Math.min(Math.ceil(displayBet / 50), 3);
+                        for(let c=0; c<chipCount; c++) {
+                            const d = document.createElement('div');
+                            d.className = 'chip chip-100'; 
+                            d.style.position = 'absolute'; d.style.top = `${-c*3}px`;
+                            if(c===chipCount-1) d.innerText = displayBet; // Top chip shows value
+                            else d.innerText = '';
+                            chipsDiv.appendChild(d);
+                        }
                     }
 
                     // Hand Rendering (Handle Split)
@@ -736,13 +758,14 @@
                     // Wrapper for Main Hand
                     const mainWrapper = document.createElement('div');
                     mainWrapper.className = `cards-wrapper ${p.splitHand ? 'split-col' : ''}`;
-                    if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 0) mainWrapper.classList.add('active-hand');
+                    // Highlight active sub-hand
+                    if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 0) mainWrapper.style.transform = "scale(1.05)";
                     
                     // Score Bubble Main
                     if(p.hand.length > 0) {
                         const scoreB = document.createElement('div');
                         scoreB.className = 'score-bubble visible';
-                        scoreB.style.position='absolute'; scoreB.style.top='-25px'; scoreB.style.zIndex='20';
+                        scoreB.style.position='absolute'; scoreB.style.top='-20px'; scoreB.style.zIndex='20';
                         scoreB.innerText = p.score;
                         mainWrapper.appendChild(scoreB);
                     }
@@ -754,11 +777,11 @@
                     if(p.splitHand) {
                         const splitWrapper = document.createElement('div');
                         splitWrapper.className = 'cards-wrapper split-col';
-                        if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 1) splitWrapper.classList.add('active-hand');
+                        if(gameState.activePlayerIndex === i && gameState.activeHandSubIndex === 1) splitWrapper.style.transform = "scale(1.05)";
                         
                         const scoreBS = document.createElement('div');
                         scoreBS.className = 'score-bubble visible';
-                        scoreBS.style.position='absolute'; scoreBS.style.top='-25px'; scoreBS.style.zIndex='20';
+                        scoreBS.style.position='absolute'; scoreBS.style.top='-20px'; scoreBS.style.zIndex='20';
                         scoreBS.innerText = p.splitScore;
                         splitWrapper.appendChild(scoreBS);
 
@@ -787,8 +810,10 @@
 
         function renderCard(c, i, hidden=false) {
             const el = document.createElement('div');
+            // Reduce horizontal spacing for mobile cards in hand
+            const spacing = window.innerWidth < 768 ? 15 : 25;
             el.className = `card ${c.color} ${hidden ? 'back' : ''}`;
-            el.style.transform = `translateX(${i * 25}px)`; 
+            el.style.transform = `translateX(${i * spacing}px)`; 
             if(!hidden) el.innerHTML = `<div style="text-align:left">${c.r}</div><div class="suit-big">${c.s}</div><div class="val-btm">${c.r}</div>`;
             return el;
         }
